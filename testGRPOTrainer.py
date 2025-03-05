@@ -21,7 +21,7 @@ training_args = GRPOConfig(output_dir="Qwen2-0.5B-GRPO",
                           )
 trainer = GRPOTrainer(
     # model="Qwen/Qwen2-0.5B-Instruct",
-    model="/home/john/Datums/Researching/Qwen-Qwen2-0.5B-Instruct",
+    model="/home/john/Datums/Researching/Qwen2-0.5B-Instruct",
     reward_funcs=reward_len,
     args=training_args,
     train_dataset=dataset,
