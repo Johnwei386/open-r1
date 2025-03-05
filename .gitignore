@@ -178,3 +178,5 @@ eval_results/
 results/
 
 .vscode/
+
+.history/

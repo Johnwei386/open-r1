@@ -3,18 +3,25 @@
 *A fully open reproduction of DeepSeek-R1. This repo is a work in progress, let's build it together!*
 
 **Table of Contents**  
-1. [Overview](#overview)  
-2. [Plan of attack](#plan-of-attack)  
-3. [Installation](#installation)  
-4. [Training models](#training-models)  
-   - [SFT](#sft)  
-   - [GRPO](#grpo)  
-5. [Evaluating models](#evaluating-models)  
-6. [Reproducing Deepseek's evaluation results](#reproducing-deepseeks-evaluation-results)  
-7. [Data generation](#data-generation)  
-   - [Generate data from a smol distilled R1 model](#generate-data-from-a-smol-distilled-r1-model)  
-   - [Generate data from DeepSeek-R1](#generate-data-from-deepseek-r1)  
-8. [Contributing](#contributing)
+- [Open R1](#open-r1)
+  - [Overview](#overview)
+    - [Plan of attack](#plan-of-attack)
+  - [Installation](#installation)
+  - [Training models](#training-models)
+    - [SFT](#sft)
+    - [GRPO](#grpo)
+      - [👨‍💻 Training with a code interpreter](#-training-with-a-code-interpreter)
+    - [Launching jobs on a Slurm cluster](#launching-jobs-on-a-slurm-cluster)
+  - [Evaluating models](#evaluating-models)
+  - [Reproducing Deepseek's evaluation results](#reproducing-deepseeks-evaluation-results)
+    - [AIME 2024](#aime-2024)
+    - [MATH-500](#math-500)
+    - [GPQA Diamond](#gpqa-diamond)
+    - [LiveCodeBench](#livecodebench)
+  - [Data generation](#data-generation)
+    - [Generate data from a smol distilled R1 model](#generate-data-from-a-smol-distilled-r1-model)
+    - [Generate data from DeepSeek-R1](#generate-data-from-deepseek-r1)
+  - [Contributing](#contributing)
 
 ## Overview
 
@@ -68,6 +75,11 @@ This will also install PyTorch `v2.5.1` and it is **very important** to use this
 
 ```shell
 GIT_LFS_SKIP_SMUDGE=1 uv pip install -e ".[dev]"
+```
+
+```bash
+# 以可编辑模式安装,库不会安装到site-package中,会引用到当前目录,同时会安装所有依赖文件
+pip install -e .
 ```
 
 Next, log into your Hugging Face and Weights and Biases accounts as follows:
