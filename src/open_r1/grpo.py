@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- codding:utf-8 -*-
+
 # Copyright 2025 The HuggingFace Team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -144,8 +147,8 @@ def main(script_args, training_args, model_args):
     if last_checkpoint is not None and training_args.resume_from_checkpoint is None:
         logger.info(f"Checkpoint detected, resuming training at {last_checkpoint=}.")
 
-    if "wandb" in training_args.report_to:
-        init_wandb_training(training_args)
+    # if "wandb" in training_args.report_to:
+    #     init_wandb_training(training_args)
 
     # Load the dataset
     dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
@@ -156,42 +159,47 @@ def main(script_args, training_args, model_args):
     tokenizer = get_tokenizer(model_args, training_args)
 
     # Get reward functions
-    REWARD_FUNCS_REGISTRY = {
-        "accuracy": accuracy_reward,
-        "format": format_reward,
-        "reasoning_steps": reasoning_steps_reward,
-        "cosine": get_cosine_scaled_reward(
-            min_value_wrong=script_args.cosine_min_value_wrong,
-            max_value_wrong=script_args.cosine_max_value_wrong,
-            min_value_correct=script_args.cosine_min_value_correct,
-            max_value_correct=script_args.cosine_max_value_correct,
-            max_len=script_args.cosine_max_len,
-        ),
-        "repetition_penalty": get_repetition_penalty_reward(
-            ngram_size=script_args.repetition_n_grams,
-            max_penalty=script_args.repetition_max_penalty,
-        ),
-        "length": len_reward,
-        "code": code_reward,
-        "code_format": get_code_format_reward(language=script_args.code_language),
-    }
-    reward_funcs = [REWARD_FUNCS_REGISTRY[func] for func in script_args.reward_funcs]
+    # REWARD_FUNCS_REGISTRY = {
+    #     "accuracy": accuracy_reward,
+    #     "format": format_reward,
+    #     "reasoning_steps": reasoning_steps_reward,
+    #     "cosine": get_cosine_scaled_reward(
+    #         min_value_wrong=script_args.cosine_min_value_wrong,
+    #         max_value_wrong=script_args.cosine_max_value_wrong,
+    #         min_value_correct=script_args.cosine_min_value_correct,
+    #         max_value_correct=script_args.cosine_max_value_correct,
+    #         max_len=script_args.cosine_max_len,
+    #     ),
+    #     "repetition_penalty": get_repetition_penalty_reward(
+    #         ngram_size=script_args.repetition_n_grams,
+    #         max_penalty=script_args.repetition_max_penalty,
+    #     ),
+    #     "length": len_reward,
+    #     "code": code_reward,
+    #     "code_format": get_code_format_reward(language=script_args.code_language),
+    # }
+    # reward_funcs = [REWARD_FUNCS_REGISTRY[func] for func in script_args.reward_funcs]
+
+    # 自定义一个奖励方式, 按回复的长度进行奖励
+    def reward_len(completions, **kwargs):
+        return [-abs(20 - len(completion)) for completion in completions]
+    reward_funcs = [reward_len]
 
     # Format into conversation
-    def make_conversation(example):
-        prompt = []
+    # def make_conversation(example):
+    #     prompt = []
 
-        if training_args.system_prompt is not None:
-            prompt.append({"role": "system", "content": training_args.system_prompt})
+    #     if training_args.system_prompt is not None:
+    #         prompt.append({"role": "system", "content": training_args.system_prompt})
 
-        prompt.append({"role": "user", "content": example["problem"]})
-        return {"prompt": prompt}
+    #     prompt.append({"role": "user", "content": example["problem"]})
+    #     return {"prompt": prompt}
 
-    dataset = dataset.map(make_conversation)
+    # dataset = dataset.map(make_conversation)
 
-    for split in dataset:
-        if "messages" in dataset[split].column_names:
-            dataset[split] = dataset[split].remove_columns("messages")
+    # for split in dataset:
+    #     if "messages" in dataset[split].column_names:
+    #         dataset[split] = dataset[split].remove_columns("messages")
 
     logger.info("*** Initializing model kwargs ***")
     torch_dtype = (
@@ -219,6 +227,7 @@ def main(script_args, training_args, model_args):
         callbacks=get_callbacks(training_args, model_args),
         processing_class=tokenizer,
     )
+    
 
     ###############
     # Training loop
@@ -274,5 +283,5 @@ def main(script_args, training_args, model_args):
 
 if __name__ == "__main__":
     parser = TrlParser((GRPOScriptArguments, GRPOConfig, ModelConfig))
-    script_args, training_args, model_args = parser.parse_args_and_config()
+    script_args, training_args, model_args = parser.parse_args_and_config() # 获取解析脚本参数、训练参数和模型参数
     main(script_args, training_args, model_args)

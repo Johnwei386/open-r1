@@ -22,6 +22,7 @@
     - [Generate data from a smol distilled R1 model](#generate-data-from-a-smol-distilled-r1-model)
     - [Generate data from DeepSeek-R1](#generate-data-from-deepseek-r1)
   - [Contributing](#contributing)
+    - [训练grpo](#训练grpo)
 
 ## Overview
 
@@ -555,3 +556,36 @@ sbatch slurm/generate.slurm \
 ## Contributing
 
 Contributions are welcome. Please refer to https://github.com/huggingface/open-r1/issues/23.
+
+## 研究记录
+
+### 1. 训练grpo
+
+使用两张3060显卡训练qwen0.5b模型, 在recipes目录新建一个Qwen2-0.5B-Instruct的目录, 该目录下新建config_demo.yaml和zero3.yaml两个文件, 使用如下命令启动训练：
+
+```bash
+accelerate launch --config_file recipes/Qwen2-0.5B-Instruct/zero3.yaml src/open_r1/grpo.py  --config recipes/Qwen2-0.5B-Instruct/config_demo.yaml"
+```
+
+经测试可成功启动训练过程, 训练过程中遇到一些问题, 记录一下:
+
+1. 提示train_batch_size计算后的值与实际给出的gradient_accumulation_steps等参数不相符问题：
+  train_batch_size=per_device_train_batch_size * gradient_accumulation_steps * world_size, 正常train_batch_size应该等于上述公式计算出来的结果，训练过程中会调用`deepspeed.HfTrainerDeepSpeedConfig::trainer_config_process() `来自动根据参数计算train_batch_size的大小；
+
+  检查per_device_train_batch_size、gradient_accumulation_steps和world_size参数的设置即可
+
+2. 训练过程中一些重要参数解释：
+
+  - num_processes：与word_size相同，但更加通用，用来表示分布式训练中的进程总数；
+  - num_machines：参与训练的机器或节点数量；
+  - gradient_accumulation_steps：是梯度累积的步数，用于在显存有限的情况下模拟更大的批量大小，不会增加显存占用，但会增加计算时间；
+  - per_device_train_batch_size：每个设备（如 GPU）上的训练批量大小，批量大小越大，显存占用越多，但训练速度可能更快，批量大小越小，显存占用越少，但训练速度可能更慢；
+  - num_generations：是生成任务中的一个参数，表示生成多少个候选结果，在文本生成任务中，如果 `num_generations=5`，则模型会生成 5 个不同的候选文本，生成数量越多，显存占用越多，计算时间也越长；
+  - num_train_epochs：控制训练的总轮次，不会导致显存溢出，但会延长训练时间，它会直接影响总优化步数(**Total optimization steps**)；
+  - max_prompt_length：生成任务中提示(prompt)序列的最大长度，通常用于控制输入序列的长度，它会直接影响显存占用，输入序列越长，模型需要处理的Token数量越多，显存占用也会增加；
+  - max_completion_length：生成任务中生成序列的最大长度，其长度直接影响显存占用；
+  - max_steps：训练过程中优化步骤(optimization steps)的最大数量，通常用于控制训练的总步数，本身不会直接影响显存占用，但在长时间训练中，显存泄露可能会导致显存使用逐渐增加；
+  - 
+
+3. 使用vllm一直失败，使用Ubuntu18，需要升级cuda到12.4，对应vllm版本需要是0.7以上，目前只能装到0.5，实际使用存在很多问题，然后，vllm只能使用一张显卡进行训练，放弃使用vllm进行训练，采用accelerate来训练之；
+
