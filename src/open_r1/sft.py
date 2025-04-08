@@ -61,6 +61,10 @@ from trl import (
 )
 
 
+# 允许 PyTorch 动态扩展显存段，减少碎片化
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+
 logger = logging.getLogger(__name__)
 
 

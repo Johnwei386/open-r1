@@ -22,7 +22,10 @@
     - [Generate data from a smol distilled R1 model](#generate-data-from-a-smol-distilled-r1-model)
     - [Generate data from DeepSeek-R1](#generate-data-from-deepseek-r1)
   - [Contributing](#contributing)
-    - [训练grpo](#训练grpo)
+  - [研究记录](#研究记录)
+    - [1. 训练grpo](#1-训练grpo)
+    - [2. 训练sft](#2-训练sft)
+    - [3. 运行模型](#3-运行模型)
 
 ## Overview
 
@@ -557,6 +560,8 @@ sbatch slurm/generate.slurm \
 
 Contributions are welcome. Please refer to https://github.com/huggingface/open-r1/issues/23.
 
+
+
 ## 研究记录
 
 ### 1. 训练grpo
@@ -570,7 +575,7 @@ accelerate launch --config_file recipes/Qwen2-0.5B-Instruct/zero3.yaml src/open_
 经测试可成功启动训练过程, 训练过程中遇到一些问题, 记录一下:
 
 1. 提示train_batch_size计算后的值与实际给出的gradient_accumulation_steps等参数不相符问题：
-  train_batch_size=per_device_train_batch_size * gradient_accumulation_steps * world_size, 正常train_batch_size应该等于上述公式计算出来的结果，训练过程中会调用`deepspeed.HfTrainerDeepSpeedConfig::trainer_config_process() `来自动根据参数计算train_batch_size的大小；
+    train_batch_size=per_device_train_batch_size * gradient_accumulation_steps * world_size, 正常train_batch_size应该等于上述公式计算出来的结果，训练过程中会调用`deepspeed.HfTrainerDeepSpeedConfig::trainer_config_process() `来自动根据参数计算train_batch_size的大小；
 
   检查per_device_train_batch_size、gradient_accumulation_steps和world_size参数的设置即可
 
@@ -588,4 +593,16 @@ accelerate launch --config_file recipes/Qwen2-0.5B-Instruct/zero3.yaml src/open_
   - 
 
 3. 使用vllm一直失败，使用Ubuntu18，需要升级cuda到12.4，对应vllm版本需要是0.7以上，目前只能装到0.5，实际使用存在很多问题，然后，vllm只能使用一张显卡进行训练，放弃使用vllm进行训练，采用accelerate来训练之；
+
+### 2. 训练sft
+训练sft与grpo相同，配置文件与命令都可以设置为一样的，执行训练后，大概到20步的时候还是会报内存溢出的错误。
+
+### 3. 运行模型
+
+
+
+
+
+
+
 
